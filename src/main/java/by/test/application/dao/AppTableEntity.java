@@ -1,14 +1,13 @@
 package by.test.application.dao;
 
-import javax.persistence.*;
-import java.util.Objects;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "app_table", schema = "public", catalog = "application")
 public class AppTableEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
     private String name;
     private Long value;
 
@@ -18,14 +17,6 @@ public class AppTableEntity {
     }
 
     public AppTableEntity() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getName() {

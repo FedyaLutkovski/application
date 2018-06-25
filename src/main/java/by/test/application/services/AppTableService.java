@@ -1,103 +1,140 @@
 package by.test.application.services;
 
 import by.test.application.dao.AppTableEntity;
+import by.test.application.dao.OperationType;
+import by.test.application.dao.Response;
+import by.test.application.dao.ResponseSum;
 import by.test.application.utils.HibernateSessionFactory;
 import org.hibernate.Session;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.Query;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class AppTableService {
-    private Long sum;
-    private Boolean sumOperation = false;
 
-    public Map<String, String> add(AppTableEntity model) {
-        if (checkName(model.getName())) {
+    private int makeQuery(AppTableEntity model, OperationType operationType) {
+        try {
+            int result = 1;
             Session session = HibernateSessionFactory.getSessionFactory().openSession();
             session.beginTransaction();
-            session.save(model);
+            if (operationType.equals(OperationType.add)) {
+                session.save(model);
+                result = 0;
+            }
+            if (operationType.equals(OperationType.remove)) {
+                Query query = session.createQuery("delete AppTableEntity where name = :name");
+                query.setParameter("name", model.getName());
+                if (query.executeUpdate() == 1) {
+                    result = 0;
+                } else result = 1;
+
+            }
+            if (operationType.equals(OperationType.checkName)) {
+                Query query = session.createQuery("from AppTableEntity where name = :name ");
+                query.setParameter("name", model.getName());
+                result = query.getResultList().size();
+            }
+            if (operationType.equals(OperationType.sum)) {
+                Query query = session.createQuery("from AppTableEntity where name = :name ");
+                query.setParameter("name", model.getName());
+                AppTableEntity appTableEntity = (AppTableEntity) query.getSingleResult();
+                result = Math.toIntExact(appTableEntity.getValue());
+            }
             session.getTransaction().commit();
             session.close();
-            return responseForm(1);
+            return result;
+        } catch (Exception e) {
+            return 5;
+        }
+    }
+
+    public Response add(AppTableEntity model) {
+        if (checkName(model)) {
+            int result = makeQuery(model, OperationType.add);
+            return responseForm(result);
         } else {
             return responseForm(2);
         }
     }
 
-    public Map<String, String> remove(AppTableEntity model) {
-        Session session = HibernateSessionFactory.getSessionFactory().openSession();
-        session.beginTransaction();
-        Query query = session.createQuery("delete AppTableEntity where name = :name");
-        query.setParameter("name", model.getName());
-        int result = query.executeUpdate();
-        session.getTransaction().commit();
-        session.close();
+
+    public Response remove(AppTableEntity model) {
+        int result = makeQuery(model, OperationType.remove);
         return responseForm(result);
     }
 
-    public Map<String, String> sum(Map<String, String> model) {
-        sum = (long) 0;
+    public Response sum(Map<String, String> model) {
+        List<Integer> list = new ArrayList<>();
         if (model.size() == 2) {
-            model.forEach((k, v) -> {
-                if (!checkName(v)) {
-                    Session session = HibernateSessionFactory.getSessionFactory().openSession();
-                    session.beginTransaction();
-                    Query query = session.createQuery("from AppTableEntity where name = :name ");
-                    query.setParameter("name", v);
-                    AppTableEntity result = (AppTableEntity) query.getSingleResult();
-                    session.getTransaction().commit();
-                    session.close();
-                    sum += result.getValue();
+            for (String key : model.keySet()) {
+                AppTableEntity appTableEntity = new AppTableEntity(model.get(key), null);
+                if (!checkName(appTableEntity)) {
+                    list.add(makeQuery(appTableEntity, OperationType.sum));
+                } else {
+                    list.clear();
+                    break;
                 }
-            });
-            sumOperation = true;
-            return responseForm(1);
+            }
+            if (list.size() > 0) {
+                int sum = list.stream().mapToInt(Integer::intValue).sum();
+                return responseSumForm(0, sum);
+            } else {
+                return responseSumForm(4, 0);
+            }
         } else {
-            return responseForm(3);
+            return responseSumForm(3, 0);
         }
 
     }
 
+    private Boolean checkName(AppTableEntity model) {
+        int result = makeQuery(model, OperationType.checkName);
+        return result == 0;
+    }
 
-    public Map<String, String> responseForm(int code) {
-        Map<String, String> response = new HashMap<>();
-        if (sumOperation) {
-            response.put("sum", String.valueOf(sum));
-            sumOperation = false;
-        }
-        response.put("code", String.valueOf(code));
-        switch (code) {
-            case 0:
-                response.put("description", "!OK");
-                break;
-            case 1:
-                response.put("description", "OK");
-                break;
-            case 2:
-                response.put("description", "An entry with this name exists");
-                break;
-            case 3:
-                response.put("description", "Arguments are more than two");
-                break;
-            default:
-                response.put("description", "Invalid code");
-                break;
-        }
+    private Response responseForm(int code) {
+        Response response = new Response();
+        response.setCode(code);
+        response.setDescription(getDescription(code));
         return response;
     }
 
-    private Boolean checkName(String name) {
-        Session session = HibernateSessionFactory.getSessionFactory().openSession();
-        session.beginTransaction();
-        Query query = session.createQuery("from AppTableEntity where name = :name ");
-        query.setParameter("name", name);
-        int result = query.getResultList().size();
-        session.getTransaction().commit();
-        session.close();
-        return result == 0;
+    private ResponseSum responseSumForm (int code, int sum){
+        ResponseSum responseSum = new ResponseSum();
+        responseSum.setCode(code);
+        responseSum.setSum(sum);
+        responseSum.setDescription(getDescription(code));
+        return responseSum;
+    }
+
+    private String getDescription (int code){
+        String description;
+        switch (code) {
+            case 0:
+                description = "OK";
+                break;
+            case 1:
+                description = "Operation not performed";
+                break;
+            case 2:
+                description = "An entry with this name exists";
+                break;
+            case 3:
+                description = "Arguments are more than two";
+                break;
+            case 4:
+                description = "One or more items are missing in the database";
+                break;
+            case 5:
+                description = "Session lost";
+                break;
+            default:
+                description = "Invalid code";
+                break;
+        }
+        return description;
     }
 
 }

@@ -8,16 +8,21 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.context.WebApplicationContext;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 @RunWith(SpringRunner.class)
+@WebAppConfiguration
 @SpringBootTest
 public class ApplicationTests {
+    private MockMvc mockMvc;
     private AppTableService appTableService;
 
     @Autowired
@@ -25,8 +30,12 @@ public class ApplicationTests {
         this.appTableService = appTableService;
     }
 
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+
     @Before
-    public void before() {
+    public void before() throws Exception {
+        this.mockMvc = webAppContextSetup(webApplicationContext).build();
         AppTableEntity appTableEntity1 = new AppTableEntity("!test1", (long) 15);
         AppTableEntity appTableEntity2 = new AppTableEntity("!test2", (long) 666);
         appTableService.add(appTableEntity1);
@@ -42,62 +51,78 @@ public class ApplicationTests {
     }
 
     @Test
-    public void responseFormTest() {
-        Map<String, String> expected = new HashMap<>();
-        expected.put("code", "1");
-        expected.put("description", "OK");
-        Map<String, String> actual = appTableService.responseForm(1);
-        assertEquals(expected, actual);
+    public void removeTest() throws Exception {
+        mockMvc.perform(post("/remove")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"!test1\",\"value\":15}"))
+                .andExpect(content().json("{\"code\":0,\"description\":\"OK\"}"));
+
+        mockMvc.perform(post("/remove")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"!test2\",\"value\":666}"))
+                .andExpect(content().json("{\"code\":0,\"description\":\"OK\"}"));
     }
 
     @Test
-    public void removeTest() {
-        AppTableEntity appTableEntity1 = new AppTableEntity("!test1", (long) 15);
-        Map<String, String> actual = appTableService.remove(appTableEntity1);
-        Map<String, String> expected = new HashMap<>();
-        expected.put("code", "1");
-        expected.put("description", "OK");
-        assertEquals(expected, actual);
-        AppTableEntity appTableEntity2 = new AppTableEntity("!test2", (long) 666);
-        actual = appTableService.remove(appTableEntity2);
-        assertEquals(expected, actual);
+    public void addTest() throws Exception {
+        mockMvc.perform(post("/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"!test1\",\"value\":15}"))
+                .andExpect(content().json("{\"code\":2,\"description\":\"An entry with this name exists\"}"));
+
+        mockMvc.perform(post("/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"!test2\",\"value\":666}"))
+                .andExpect(content().json("{\"code\":2,\"description\":\"An entry with this name exists\"}"));
     }
 
     @Test
-    public void addTest() {
-        AppTableEntity appTableEntity1 = new AppTableEntity("!test1", (long) 15);
-        Map<String, String> actual = appTableService.add(appTableEntity1);
-        Map<String, String> expected = new HashMap<>();
-        expected.put("code", "2");
-        expected.put("description", "An entry with this name exists");
-        assertEquals(expected, actual);
-        AppTableEntity appTableEntity2 = new AppTableEntity("!test2", (long) 666);
-        actual = appTableService.add(appTableEntity2);
-        assertEquals(expected, actual);
+    public void addAndRemoveTest() throws Exception {
+        mockMvc.perform(post("/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"!test3\",\"value\":19}"))
+                .andExpect(content().json("{\"code\":0,\"description\":\"OK\"}"));
+
+        mockMvc.perform(post("/remove")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"!test3\",\"value\":19}"))
+                .andExpect(content().json("{\"code\":0,\"description\":\"OK\"}"));
     }
 
     @Test
-    public void addAndRemoveTest() {
-        Map<String, String> expected = new HashMap<>();
-        expected.put("code", "1");
-        expected.put("description", "OK");
-        AppTableEntity appTableEntity = new AppTableEntity("!test3", (long) 19);
-        Map<String, String> actual = appTableService.add(appTableEntity);
-        assertEquals(expected, actual);
-        actual = appTableService.remove(appTableEntity);
-        assertEquals(expected, actual);
+    public void sumTest() throws Exception {
+        mockMvc.perform(post("/sum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"first\":\"!test1\",\"second\":\"!test2\"}"))
+                .andExpect(content().json("{\"sum\":681,\"code\":0,\"description\":\"OK\"}"));
     }
 
     @Test
-    public void sumTest() {
-        Map<String, String> expected = new HashMap<>();
-        expected.put("sum", "681");
-        expected.put("code", "1");
-        expected.put("description", "OK");
-        Map<String, String> model = new HashMap<>();
-        model.put("first","!test1");
-        model.put("second","!test2");
-        Map<String, String> actual = appTableService.sum(model);
-        assertEquals(expected, actual);
+    public void sumTestArgumentsAreMoreThanTwo() throws Exception {
+        mockMvc.perform(post("/sum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"first\":\"!test1\",\"second\":\"!test2\",\"third\":\"!test3\"}"))
+                .andExpect(content().json("{\"sum\":0,\"code\":3,\"description\":\"Arguments are more than two\"}"));
     }
+
+    @Test
+    public void sumTestOneOrMoreItemsAreMissingInTheDatabase() throws Exception {
+        mockMvc.perform(post("/remove")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"!test1\",\"value\":15}"))
+                .andExpect(content().json("{\"code\":0,\"description\":\"OK\"}"));
+        mockMvc.perform(post("/sum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"first\":\"!test1\",\"second\":\"!test2\"}"))
+                .andExpect(content().json("{\"sum\":0,\"code\":4,\"description\":\"One or more items are missing in the database\"}"));
+    }
+
+    @Test
+    public void sessionLostTest() throws Exception {
+        mockMvc.perform(post("/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"first\":\"!test1\",\"second\":\"!test2\"}"))
+                .andExpect(content().json("{\"code\":5,\"description\":\"Session lost\"}"));
+    }
+
 }

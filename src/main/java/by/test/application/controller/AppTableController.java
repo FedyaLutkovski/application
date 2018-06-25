@@ -1,6 +1,7 @@
 package by.test.application.controller;
 
 import by.test.application.dao.AppTableEntity;
+import by.test.application.dao.Response;
 import by.test.application.services.AppTableService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -17,17 +18,17 @@ public class AppTableController {
     }
 
     @PostMapping(value = "/add")
-    public Map<String, String> add(@RequestBody AppTableEntity model) {
+    public Response add(@RequestBody AppTableEntity model) {
         return appTableService.add(model);
     }
 
     @PostMapping(value = "/remove")
-    public Map<String, String> remove(@RequestBody AppTableEntity model) {
+    public Response remove(@RequestBody AppTableEntity model) {
         return appTableService.remove(model);
     }
 
     @PostMapping(value = "/sum")
-    public Map<String, String> remove(@RequestBody Map<String, String> model) {
+    public Response remove(@RequestBody Map<String, String> model) {
         return appTableService.sum(model);
     }
 }

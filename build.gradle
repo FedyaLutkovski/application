@@ -28,8 +28,8 @@ repositories {
 dependencies {
     compile('org.springframework.boot:spring-boot-starter')
     compile('org.springframework.boot:spring-boot-starter-web')
-    compile group: 'postgresql', name: 'postgresql', version: '9.0-801.jdbc4'
     compile group: 'org.hibernate', name: 'hibernate-core', version: '5.3.1.Final'
+    compile group: 'org.hsqldb', name: 'hsqldb', version: '2.4.0'
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 
