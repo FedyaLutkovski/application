@@ -1,0 +1,44 @@
+buildscript {
+    ext {
+        springBootVersion = '1.5.15.BUILD-SNAPSHOT'
+    }
+    repositories {
+        mavenCentral()
+        maven { url "https://repo.spring.io/snapshot" }
+        maven { url "https://repo.spring.io/milestone" }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+
+group = 'by.test'
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url "https://repo.spring.io/snapshot" }
+    maven { url "https://repo.spring.io/milestone" }
+}
+
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter')
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compile group: 'postgresql', name: 'postgresql', version: '9.0-801.jdbc4'
+    compile group: 'org.hibernate', name: 'hibernate-core', version: '5.3.1.Final'
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+
+task installSumService(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'by.test.application.Application'
+    }
+    baseName = 'sum_service'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
