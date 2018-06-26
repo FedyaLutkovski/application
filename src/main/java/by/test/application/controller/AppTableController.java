@@ -2,6 +2,7 @@ package by.test.application.controller;
 
 import by.test.application.dao.AppTableEntity;
 import by.test.application.dao.Response;
+import by.test.application.dao.ResponseSum;
 import by.test.application.services.AppTableService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class AppTableController {
     }
 
     @PostMapping(value = "/sum")
-    public Response remove(@RequestBody Map<String, String> model) {
+    public ResponseSum remove(@RequestBody Map<String, String> model) {
         return appTableService.sum(model);
     }
 }

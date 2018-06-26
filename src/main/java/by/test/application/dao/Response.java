@@ -4,6 +4,11 @@ public class Response {
     private Integer code;
     private String description;
 
+    public Response(Integer code, String description) {
+        this.code = code;
+        this.description = description;
+    }
+
     public Integer getCode() {
         return code;
     }

@@ -118,11 +118,11 @@ public class ApplicationTests {
     }
 
     @Test
-    public void sessionLostTest() throws Exception {
-        mockMvc.perform(post("/add")
+    public void OperationNotPerformed() throws Exception {
+        mockMvc.perform(post("/remove")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"first\":\"!test1\",\"second\":\"!test2\"}"))
-                .andExpect(content().json("{\"code\":5,\"description\":\"Session lost\"}"));
+                .content("{\"name\":\"!test431\",\"value\":15}"))
+                .andExpect(content().json("{\"code\":1,\"description\":\"Operation not performed\"}"));
     }
 
 }
