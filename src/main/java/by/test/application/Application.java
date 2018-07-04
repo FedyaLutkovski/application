@@ -1,5 +1,7 @@
 package by.test.application;
 
+import by.test.application.utils.HibernateSessionFactory;
+import org.hibernate.Session;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

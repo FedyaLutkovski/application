@@ -4,12 +4,13 @@
         "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
   <session-factory>
-    <property name="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</property>
-    <property name="connection.url">jdbc:mysql://127.0.0.1:3306/application</property>
-    <property name="connection.username">root</property>
+    <property name="hibernate.dialect">org.hibernate.dialect.HSQLDialect</property>
+    <property name="connection.url">jdbc:hsqldb:mem:dataSource</property>
+    <property name="connection.driver_class">org.hsqldb.jdbcDriver</property>
+    <property name="connection.username"/>
     <property name="connection.password"/>
     <!-- DB schema will be updated if needed -->
-    <property name="hbm2ddl.auto">validate</property>
+    <property name="hbm2ddl.auto">create</property>
     <mapping class="by.test.application.dao.AppTableEntity"/>
   </session-factory>
 </hibernate-configuration>
